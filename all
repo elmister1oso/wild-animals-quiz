@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wild Animals Vocabulary Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* helpful visual cue while images load */
+    #animal-img.loading {
+      filter: blur(6px) grayscale(70%);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-emerald-50 p-4">
+  <h1 class="text-3xl font-bold mb-6 text-emerald-700 text-center">
+    Wild Animals Quiz
+  </h1>
+
+  <!-- QUIZ CARD -->
+  <div id="quiz-card" class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md text-center">
+    <!-- Image holder -->
+    <img
+      id="animal-img"
+      src=""
+      alt="animal"
+      class="mx-auto mb-4 w-52 h-52 object-contain loading"
+    />
+
+    <!-- Feedback -->
+    <div id="feedback" class="h-10 text-xl font-semibold mb-2"></div>
+
+    <!-- Answer buttons -->
+    <div id="options" class="flex flex-col gap-3"></div>
+  </div>
+
+  <!-- Final score -->
+  <div id="result" class="hidden mt-6 text-2xl font-bold text-emerald-800"></div>
+
+  <script>
+    /* =====================================================
+       HOW TO USE LOCAL IMAGES
+       -----------------------------------------------------
+       1. Create a folder named "img" next to this HTML file.
+       2. Rename each photo exactly as listed below (all lowercase).
+          lion.jpg, elephant.jpg, zebra.jpg, giraffe.jpg, panda.jpg,
+          wolf.jpg, kangaroo.jpg, penguin.jpg, monkey.jpg, hippo.jpg
+       3. Place the photos inside the img/ folder.
+       4. Open this file in your browser – the quiz will load the
+          local photo. If it is missing, an online Unsplash fallback
+          will appear automatically so the game never breaks.
+       ===================================================== */
+
+    const questions = [
+      { name: "lion", choices: ["lion", "tiger", "cheetah"] },
+      { name: "elephant", choices: ["rhino", "hippo", "elephant"] },
+      { name: "zebra", choices: ["horse", "zebra", "giraffe"] },
+      { name: "giraffe", choices: ["deer", "camel", "giraffe"] },
+      { name: "panda", choices: ["koala", "panda", "bear"] },
+      { name: "wolf", choices: ["fox", "wolf", "dog"] },
+      { name: "kangaroo", choices: ["kangaroo", "wallaby", "rabbit"] },
+      { name: "penguin", choices: ["penguin", "pelican", "duck"] },
+      { name: "monkey", choices: ["lemur", "gorilla", "monkey"] },
+      { name: "hippo", choices: ["hippo", "rhino", "buffalo"] },
+    ].map((q) => ({
+      ...q,
+      // local relative path first
+      imgLocal: `img/${q.name}.jpg`,
+      // unsplash fallback – unique query prevents caching same image
+      imgFallback: `https://source.unsplash.com/400x400/?${q.name}&sig=${Math.random()}`,
+    }));
+
+    // Shuffle questions to vary order each playthrough
+    let shuffled = [...questions].sort(() => Math.random() - 0.5);
+    let index = 0,
+      score = 0;
+
+    // DOM nodes
+    const imgEl = document.getElementById("animal-img");
+    const optionsEl = document.getElementById("options");
+    const feedbackEl = document.getElementById("feedback");
+    const resultEl = document.getElementById("result");
+
+    /* ---------------- CORE FUNCTIONS ---------------- */
+
+    function showQuestion() {
+      feedbackEl.textContent = "";
+      feedbackEl.className = "h-10 text-xl font-semibold mb-2";
+      imgEl.classList.add("loading");
+
+      const q = shuffled[index];
+
+      // First attempt: local image
+      imgEl.src = q.imgLocal;
+      imgEl.alt = q.name;
+
+      // Fallback if local image fails to load
+      imgEl.onerror = () => {
+        imgEl.onerror = null; // prevent infinite loop
+        imgEl.src = q.imgFallback;
+      };
+
+      // Remove blur once loaded
+      imgEl.onload = () => imgEl.classList.remove("loading");
+
+      // Build answer buttons
+      optionsEl.innerHTML = "";
+      q.choices.sort(() => Math.random() - 0.5).forEach((text) => {
+        const btn = document.createElement("button");
+        btn.textContent = text;
+        btn.className =
+          "py-2 px-4 rounded-xl bg-emerald-200 hover:bg-emerald-300 active:scale-95 transition";
+        btn.onclick = () => checkAnswer(btn, text, q.name);
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(btn, selected, correct) {
+      const isCorrect = selected === correct;
+
+      if (isCorrect) {
+        score++;
+        feedbackEl.textContent = "✅ Correct!";
+        feedbackEl.classList.add("text-emerald-700");
+      } else {
+        feedbackEl.textContent = `❌ Oops! It's '${correct}'.`;
+        feedbackEl.classList.add("text-rose-600");
+      }
+
+      [...optionsEl.children].forEach((b) => {
+        if (b.textContent === correct) b.classList.add("bg-emerald-400", "text-white");
+        else if (b === btn) b.classList.add("bg-rose-400", "text-white");
+        b.disabled = true;
+      });
+
+      setTimeout(() => {
+        index++;
+        if (index < shuffled.length) showQuestion();
+        else showResult();
+      }, 800);
+    }
+
+    function showResult() {
+      document.getElementById("quiz-card").classList.add("hidden");
+      resultEl.textContent = `You scored ${score} / ${shuffled.length}!`;
+      resultEl.classList.remove("hidden");
+    }
+
+    // ---------- Kick things off ----------
+    showQuestion();
+  </script>
+</body>
+</html>
